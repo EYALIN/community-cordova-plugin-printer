@@ -1,49 +1,50 @@
 {
-  "name": "cordova-plugin-printer",
-  "version": "0.8.0",
-  "description": "Prints HTML documents",
-  "cordova": {
-    "id": "cordova-plugin-printer",
-    "platforms": [
-      "ios",
-      "android",
-      "windows",
-      "browser"
-    ]
+  "name": "community-cordova-plugin-printer",
+  "version": "1.0.0",
+  "description": "Cordova plugin to print documents, images and web pages",
+  "main": "www/printer.js",
+  "types": "types/index.d.ts",
+  "scripts": {
+    "test": "echo \"No tests yet\""
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/katzer/cordova-plugin-printer.git"
+    "url": "https://github.com/EYALIN/community-cordova-plugin-printer.git"
   },
   "keywords": [
-    "appplant",
-    "printer",
     "cordova",
+    "plugin",
+    "printer",
+    "print",
+    "pdf",
+    "image",
+    "html",
     "ecosystem:cordova",
-    "cordova-ios",
     "cordova-android",
-    "cordova-windows",
+    "cordova-ios",
     "cordova-browser"
   ],
-  "engines": [
-    {
-      "name": "cordova",
-      "version": ">=3.0.0"
-    },
-    {
-      "name": "android-sdk",
-      "version": ">=19"
-    },
-    {
-      "name": "apple-ios",
-      "version": ">=8.0"
-    }
-  ],
-  "author": "Sebastián Katzer",
-  "license": "Apache 2.0",
+  "author": "EYALIN",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/katzer/cordova-plugin-printer/issues"
+    "url": "https://github.com/EYALIN/community-cordova-plugin-printer/issues"
   },
-  "homepage": "https://github.com/katzer/cordova-plugin-printer#readme",
-  "dependencies": {}
+  "homepage": "https://github.com/EYALIN/community-cordova-plugin-printer#readme",
+  "cordova": {
+    "id": "community-cordova-plugin-printer",
+    "platforms": [
+      "android",
+      "ios",
+      "browser"
+    ]
+  },
+  "engines": {
+    "cordovaDependencies": {
+      ">=1.0.0": {
+        "cordova": ">=9.0.0",
+        "cordova-android": ">=10.0.0",
+        "cordova-ios": ">=6.0.0"
+      }
+    }
+  }
 }

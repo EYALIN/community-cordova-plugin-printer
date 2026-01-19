@@ -1,38 +1,40 @@
-## ChangeLog
+# Changelog
 
-#### Version 0.8.0 (01.03.2019)
-- Most parts of the code has been rewritten
-- Added support for Android 8+
-- Added support for iOS 10+
-- Added support for the browser platform
-- Added support for header and foooter
-- Added support to print PDF files, images, Base64 encoded images
-- And many more, see the new README
+All notable changes to this project will be documented in this file.
 
-#### Version 0.7.3 (19.12.2016)
-- Fixed incompatibility with Android KitKat (4.4)
+## [1.0.0] - 2026-01-18
 
-#### Version 0.7.2 (03.08.2016)
-- [__change__:] Changed plugin ID to `cordova-plugin-printer`
-- [__change__:] Plugin requires Android KitKat or newer
-- [__change__:] `isAvailable` returns false if no enabled service can be found (Android)
-- [feature:] New `pick` interface to pick a printer for future usage
-- [feature:] Support for Windows10 platform (Thanks to #cristi-badila)
-- [enhancement:] `isAvailable` returns count of available services (Android)
-- [enhancement:] `print` returns bool value to indicate the result
-- [enhancement:] Added missing `duplex` support (Android)
-- [__change__:] `duplex` requires a string (`none`, `long` or `short`)
-- [enhancement:] Support for `border`, `hidePageRange`, `hideNumberOfCopies` and `hidePaperFormat` (iOS specific)
+### Initial Release
 
-#### Version 0.7.1 (23.04.2015)
-- [bugfix:] `isAvailable` does not block the main thread anymore.
-- [bugfix:] iPad+iOS8 incompatibility (Thanks to __zmagyar__)
-- [enhancement:] Print-View positioning on iPad
-- [enhancement:] Send direct to printer when printerId: is specified.
+This is the first release of `community-cordova-plugin-printer`, a modernized fork of the original [cordova-plugin-printer](https://github.com/niceonedaviddevs/cordova-plugin-printer) by appPlant GmbH.
 
-#### Version 0.7.0 (12.09.2014)
-- Android Printing Framework support
-- [__change__:] Renamed `isServiceAvailable` to `isAvailable`
-- [enhancement:] New print options like `name`, `landscape` or `duplex`
-- [enhancement:] Ability to print remote content via URI
-- [enhancement:] Callback support
+### Changes from Original
+
+- **iOS**: Added proper UIKit framework imports for Cordova iOS 8.0.0 compatibility
+- **iOS**: Renamed class prefix from APP* to CDV* for consistency
+- **Android**: Updated to use AndroidX instead of android.support.* libraries
+- **Android**: Updated package namespace to `com.community.cordova.printer`
+- Added TypeScript definitions
+- Updated plugin structure and documentation
+
+### Features
+
+- Print HTML content
+- Print PDF files
+- Print images (PNG, JPEG, GIF)
+- Print plain text
+- Configure print options (duplex, landscape, grayscale, copies)
+- Select paper size
+- Check printer availability
+- Pick printer (iOS)
+- Browser platform support
+
+### Supported Platforms
+
+- Android 10.0.0+
+- iOS 6.0.0+
+- Browser
+
+### Credits
+
+A huge thank you to appPlant GmbH for creating and maintaining the original cordova-plugin-printer plugin.
