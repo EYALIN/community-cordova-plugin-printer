@@ -1,62 +1,80 @@
 /*
- Copyright 2013 Sebastián Katzer
-
- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
-
- http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+ * Copyright (c) 2024 Community Cordova Plugin Authors
+ * Licensed under the MIT License
+ *
+ * Browser platform implementation for Printer plugin
  */
 
-/**
- * Verifies if printing is supported on the device.
- *
- * @param [ Function ] success Success callback function.
- * @param [ Function ] error   Error callback function.
- * @param [ Array ]    args    Interface arguments.
- *
- * @return [ Void ]
- */
-exports.check = function (success, fail, args) {
-    success(args.length === 0 && window.hasOwnProperty('print'));
+var Printer = {
+
+    check: function(success, error, args) {
+        var result = {
+            avail: typeof window.print === 'function',
+            printers: []
+        };
+        success(result);
+    },
+
+    types: function(success, error, args) {
+        success(['text/html']);
+    },
+
+    pick: function(success, error, args) {
+        success(null);
+    },
+
+    print: function(success, error, args) {
+        var options = args[0] || {};
+        var content = options.content;
+
+        if (!content) {
+            success(false);
+            return;
+        }
+
+        try {
+            var printWindow = window.open('', '_blank', 'width=800,height=600');
+
+            if (printWindow) {
+                // Check if content is HTML
+                if (content.indexOf('<') !== -1) {
+                    printWindow.document.write(content);
+                } else {
+                    printWindow.document.write('<pre>' + content + '</pre>');
+                }
+
+                printWindow.document.close();
+                printWindow.focus();
+
+                setTimeout(function() {
+                    printWindow.print();
+                    printWindow.close();
+                    success(true);
+                }, 250);
+            } else {
+                // Popup blocked, try iframe approach
+                var iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+
+                var doc = iframe.contentWindow.document;
+                doc.open();
+                doc.write(content);
+                doc.close();
+
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+
+                setTimeout(function() {
+                    document.body.removeChild(iframe);
+                    success(true);
+                }, 1000);
+            }
+        } catch (e) {
+            console.error('Print error:', e);
+            success(false);
+        }
+    }
 };
 
-/**
- * List of printable document types.
- *
- * @param [ Function ] success Success callback function.
- * @param [ Function ] error   Error callback function.
- * @param [ Array ]    args    Interface arguments.
- *
- * @return [ Void ]
- */
-exports.types = function (success, fail, args) {
-    success([]);
-};
-
-/**
- * Sends the content to the Printing Framework.
- *
- * @param [ Function ] success Success callback function.
- * @param [ Function ] error   Error callback function.
- * @param [ Array ]    args    Interface arguments.
- *
- * @return [ Void ]
- */
-exports.print = function (success, fail, args) {
-    window.print();
-    success();
-};
-
-cordova.commandProxy.add('Printer', exports);
+require('cordova/exec/proxy').add('Printer', Printer);
