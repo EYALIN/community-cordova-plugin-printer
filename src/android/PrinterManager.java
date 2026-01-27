@@ -228,17 +228,46 @@ public class PrinterManager {
                                 CancellationSignal cancellationSignal,
                                 WriteResultCallback callback) {
 
+                Log.d(LOG_TAG, "onWrite called");
+
                 if (cancellationSignal.isCanceled()) {
+                    Log.d(LOG_TAG, "onWrite: cancellation signal received");
                     callback.onWriteCancelled();
                     return;
                 }
 
                 String content = getContent();
+                Log.d(LOG_TAG, "onWrite: content length = " + (content != null ? content.length() : "null"));
 
-                if (content != null && (content.startsWith("file://") || content.endsWith(".pdf"))) {
-                    String path = content.startsWith("file://") ? content.substring(7) : content;
+                if (content == null) {
+                    Log.e(LOG_TAG, "onWrite: No content to print");
+                    callback.onWriteFailed("No content to print");
+                    return;
+                }
+
+                // Handle base64 data URI (data:application/pdf;base64,... or data:image/...;base64,...)
+                if (content.startsWith("data:") && content.contains(";base64,")) {
+                    Log.d(LOG_TAG, "onWrite: handling base64 data URI");
+                    writePdfFromBase64(content, destination, callback);
+                }
+                // Handle file:// URLs
+                else if (content.startsWith("file://")) {
+                    String path = content.substring(7);
+                    Log.d(LOG_TAG, "onWrite: handling file:// URL, path = " + path);
                     writePdfFile(path, destination, callback);
-                } else {
+                }
+                // Handle content:// URLs
+                else if (content.startsWith("content://")) {
+                    Log.d(LOG_TAG, "onWrite: handling content:// URL");
+                    writePdfFile(content, destination, callback);
+                }
+                // Handle plain file paths ending with .pdf
+                else if (content.endsWith(".pdf")) {
+                    Log.d(LOG_TAG, "onWrite: handling plain file path");
+                    writePdfFile(content, destination, callback);
+                }
+                else {
+                    Log.e(LOG_TAG, "onWrite: Unsupported content type, content starts with: " + content.substring(0, Math.min(50, content.length())));
                     callback.onWriteFailed("Unsupported content type");
                 }
             }
@@ -279,6 +308,46 @@ public class PrinterManager {
     }
 
     /**
+     * Writes content from base64 data URI to the print destination.
+     */
+    private void writePdfFromBase64(String dataUri, ParcelFileDescriptor destination,
+                                    PrintDocumentAdapter.WriteResultCallback callback) {
+        OutputStream output = null;
+
+        try {
+            // Extract base64 content after the comma
+            int commaIndex = dataUri.indexOf(',');
+            if (commaIndex < 0) {
+                Log.e(LOG_TAG, "writePdfFromBase64: Invalid base64 data URI - no comma found");
+                callback.onWriteFailed("Invalid base64 data URI");
+                return;
+            }
+
+            String base64Content = dataUri.substring(commaIndex + 1);
+            Log.d(LOG_TAG, "writePdfFromBase64: base64 content length = " + base64Content.length());
+
+            byte[] pdfBytes = Base64.decode(base64Content, Base64.DEFAULT);
+            Log.d(LOG_TAG, "writePdfFromBase64: decoded bytes length = " + pdfBytes.length);
+
+            output = new FileOutputStream(destination.getFileDescriptor());
+            output.write(pdfBytes);
+            output.flush();
+
+            Log.d(LOG_TAG, "writePdfFromBase64: successfully wrote " + pdfBytes.length + " bytes");
+            callback.onWriteFinished(new PageRange[]{PageRange.ALL_PAGES});
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "Error writing PDF from base64", e);
+            callback.onWriteFailed(e.getMessage());
+        } finally {
+            try {
+                if (output != null) output.close();
+            } catch (IOException ignored) {
+                // Ignore close errors
+            }
+        }
+    }
+
+    /**
      * Opens an input stream for the specified path.
      *
      * @param path The file path or URL.
@@ -288,6 +357,16 @@ public class PrinterManager {
     @NonNull
     private InputStream openInputStream(@NonNull String path) throws IOException {
         Context context = activity.getApplicationContext();
+
+        // Handle base64 data URIs (data:application/pdf;base64,...)
+        if (path.startsWith("data:")) {
+            int commaIndex = path.indexOf(',');
+            if (commaIndex > 0) {
+                String base64 = path.substring(commaIndex + 1);
+                byte[] bytes = Base64.decode(base64, Base64.DEFAULT);
+                return new ByteArrayInputStream(bytes);
+            }
+        }
 
         if (path.startsWith("base64:")) {
             String base64 = path.substring(7);
@@ -318,6 +397,24 @@ public class PrinterManager {
         }
 
         // Try as a file path
-        return new FileInputStream(new File(path));
+        File file = new File(path);
+        if (file.exists() && file.canRead()) {
+            return new FileInputStream(file);
+        }
+
+        // If direct file access fails, try using URI with content resolver
+        // This handles scoped storage on Android 10+
+        try {
+            android.net.Uri uri = android.net.Uri.parse("file://" + path);
+            InputStream stream = context.getContentResolver().openInputStream(uri);
+            if (stream != null) {
+                return stream;
+            }
+        } catch (Exception e) {
+            Log.w(LOG_TAG, "Failed to open via content resolver: " + e.getMessage());
+        }
+
+        // Last resort - try direct file access
+        return new FileInputStream(file);
     }
 }

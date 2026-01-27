@@ -123,7 +123,8 @@ public class PrinterPlugin extends CordovaPlugin {
 
         cordova.getActivity().runOnUiThread(() -> {
             try {
-                PrintManager printManager = (PrintManager) getContext().getSystemService(PRINT_SERVICE);
+                // IMPORTANT: Must use Activity context, not ApplicationContext for PrintManager.print()
+                PrintManager printManager = (PrintManager) cordova.getActivity().getSystemService(PRINT_SERVICE);
                 String jobName = printerManager.getJobName();
                 PrintAttributes.Builder builder = printerManager.toPrintAttributes();
                 PrintDocumentAdapter adapter = printerManager.createPrintAdapter();
@@ -136,33 +137,49 @@ public class PrinterPlugin extends CordovaPlugin {
                 });
             } catch (Exception e) {
                 Log.e(LOG_TAG, "Error printing", e);
-                sendPluginResult(false);
+                sendPluginResult("failed");
             }
         });
     }
 
     /**
      * Wait for print job completion and send result.
+     * Returns: "completed", "cancelled", or "failed"
      */
     private void waitForPrintJobCompletion(@Nullable PrintJob job) {
         if (job == null) {
-            sendPluginResult(false);
+            Log.e(LOG_TAG, "waitForPrintJobCompletion: job is null");
+            sendPluginResult("failed");
             return;
         }
 
+        Log.d(LOG_TAG, "waitForPrintJobCompletion: starting to monitor job " + job.getId());
+
         while (true) {
-            if (job.isCancelled() || job.isCompleted() || job.isFailed()) {
-                break;
+            if (job.isCancelled()) {
+                Log.d(LOG_TAG, "waitForPrintJobCompletion: job cancelled");
+                sendPluginResult("cancelled");
+                return;
+            }
+            if (job.isCompleted()) {
+                Log.d(LOG_TAG, "waitForPrintJobCompletion: job completed");
+                sendPluginResult("completed");
+                return;
+            }
+            if (job.isFailed()) {
+                Log.d(LOG_TAG, "waitForPrintJobCompletion: job failed");
+                sendPluginResult("failed");
+                return;
             }
 
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                break;
+                Log.d(LOG_TAG, "waitForPrintJobCompletion: interrupted");
+                sendPluginResult("cancelled");
+                return;
             }
         }
-
-        sendPluginResult(!job.isFailed() && !job.isCancelled());
     }
 
     /**
