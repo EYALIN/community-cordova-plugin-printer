@@ -1,9 +1,9 @@
 {
   "name": "community-cordova-plugin-printer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Cordova plugin to print documents, images and web pages",
-  "main": "www/printer.js",
-  "types": "types/index.d.ts",
+  "main": "./types/index.d.ts",
+  "types": "./types/index.d.ts",
   "scripts": {
     "test": "echo \"No tests yet\""
   },
